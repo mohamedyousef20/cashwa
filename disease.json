@@ -1,0 +1,110 @@
+[
+    {
+        "name": "Tea Mosquito Bug (Helopeltis spp.)",
+        "symptoms": [
+            "Feeding causes necrotic spots on young shoots, leaves, and nuts.",
+            "Deformed nuts and reduced yield."
+        ],
+        "treatment": [
+            "Apply Neem-based insecticides or chemical pesticides like Imidacloprid (0.3ml/L).",
+            "Encourage natural predators like ladybugs and spiders.",
+            "Prune infested branches to reduce bug populations."
+        ]
+    },
+    {
+        "name": "Cashew Stem and Root Borer (Plocaederus ferrugineus)",
+        "symptoms": [
+            "Larvae bore into the trunk and roots, causing tree weakening.",
+            "Wilting of leaves and eventual tree death."
+        ],
+        "treatment": [
+            "Apply Chlorpyrifos (5ml/L) or Neem oil to affected areas.",
+            "Remove and destroy heavily infested trees.",
+            "Paint tree trunks with lime and Bordeaux mixture as a preventive measure."
+        ]
+    },
+    {
+        "name": "Thrips (Selenothrips rubrocinctus)",
+        "symptoms": [
+            "Silvering and curling of young leaves.",
+            "Infested nuts turn brown and fall prematurely."
+        ],
+        "treatment": [
+            "Use Biological control agents like predatory mites.",
+            "Spray with Spinosad (0.5ml/L) or Neem extract.",
+            "Maintain good orchard sanitation."
+        ]
+    },
+    {
+        "name": "Sunscald or Heat Stress",
+        "symptoms": [
+            "Sunburn on exposed stems and nuts.",
+            "Leaf scorching, premature nut drop."
+        ],
+        "treatment": [
+            "Provide shade trees or apply whitewash to exposed stems.",
+            "Maintain proper irrigation during hot months."
+        ]
+    },
+    {
+        "name": "Drought Stress",
+        "symptoms": [
+            "Wilting, reduced nut size, and delayed flowering."
+        ],
+        "treatment": [
+            "Implement drip irrigation for consistent moisture.",
+            "Mulch around trees to retain soil moisture."
+        ]
+    },
+    {
+        "name": "Zinc Deficiency",
+        "symptoms": [
+            "Small leaves, yellowing, and reduced nut development."
+        ],
+        "treatment": [
+            "Foliar spray with Zinc Sulphate (0.5%)."
+        ]
+    },
+    {
+        "name": "Boron Deficiency",
+        "symptoms": [
+            "Poor flowering, hollow nuts, and dieback."
+        ],
+        "treatment": [
+            "Apply Boron (1-2g/L) as foliar spray during flowering."
+        ]
+    },
+    {
+        "name": "Powdery Mildew (Oidium anacardii)",
+        "symptoms": [
+            "White powdery patches on leaves, flowers, and young nuts.",
+            "Causes flower abortion and reduced fruit set."
+        ],
+        "treatment": [
+            "Apply Sulfur-based fungicides or wettable sulfur (2g/L).",
+            "Spray Copper-based fungicides before flowering."
+        ]
+    },
+    {
+        "name": "Anthracnose (Colletotrichum gloeosporioides)",
+        "symptoms": [
+            "Black sunken spots on leaves, shoots, and nuts.",
+            "Severe infections cause nut drop."
+        ],
+        "treatment": [
+            "Use Copper Oxychloride (2g/L) as a preventive spray.",
+            "Ensure proper spacing for airflow to reduce humidity."
+        ]
+    },
+    {
+        "name": "Dieback (Lasiodiplodia theobromae)",
+        "symptoms": [
+            "Progressive drying of branches from tip to base.",
+            "Dark lesions on stems and leaves."
+        ],
+        "treatment": [
+            "Prune affected branches and apply Copper-based fungicides.",
+            "Improve soil drainage and avoid waterlogging."
+        ]
+    }
+]
