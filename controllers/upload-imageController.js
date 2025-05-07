@@ -1,130 +1,97 @@
-import { spawn } from 'child_process';
-import sharp from 'sharp';
-import path from 'path';
-import fs from 'fs';
-import History from '../models/History.js';
-import Disease from '../models/Disease.js';
+// controllers/upload-imageController.js
+
+import FormData from 'form-data';
+import fetch from 'node-fetch';
 import createError from '../utils/error.js';
+import Detection from '../models/Detection.js';
+import expressAsyncHandler from 'express-async-handler';
+import sharp from 'sharp';
+import fs from 'fs';
+import path from 'path';
+import uploadSingleImg from '../middleware/uploadImages.js';
 
-// Simple in-memory cache for diseases
-const diseaseCache = {};
+// ==========================
+// Create Upload Directory
+// ==========================
+const uploadDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
+// ==========================
+// Middleware to Handle Upload
+// ==========================
+export const createDetectImg = uploadSingleImg("image");
+
+// ==========================
+// Resize Image with Sharp
+// ==========================
+export const resizeImage = expressAsyncHandler(async (req, res, next) => {
+    if (!req.file) return next();
+
+    try {
+        const fileName = `img-${Date.now()}-${Math.floor(Math.random() * 10000)}.jpeg`;
+
+        await sharp(req.file.buffer)
+            .resize(500, 500)
+            .toFormat("jpeg")
+            .jpeg({ quality: 90 })
+            .toFile(path.join(uploadDir, fileName));
+
+        // Attach filename to request body
+        req.body.image = fileName;
+        next();
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ==========================
+// Upload Image & Detect Disease
+// ==========================
 const uploadImage = async (req, res, next) => {
     try {
-        if (!req.file) {
-            return res.status(400).send('No file uploaded');
+        if (!req.file || !req.body.image) {
+            throw new createError("No image uploaded or processing failed", 400);
         }
-        // Create a processed image path for the output file.
-        const processedImagePath = path.join('uploads', `${Date.now()}-processed.jpeg`);
 
-        // Process the image using Sharp from the in-memory buffer:
-        await sharp(req.file.buffer)
-            .resize(640, 640, {
-                fit: sharp.fit.cover,
-                position: 'center'
-            })
-            .jpeg({ quality: 90, mozjpeg: true })
-            .toFile(processedImagePath);
-
-        console.log(`Image processed and saved at: ${processedImagePath}`);
-
-        // Determine the model script path.
-        // Using environment variable override, else assume the YOLO script is in a sibling folder named "yolo-v9"
-        const modelScriptPath = process.env.YOLO_SCRIPT_PATH ||
-            path.join(process.cwd(), '../yolo-v9', 'yolov9.py');
-
-        console.log(`Using model script at: ${modelScriptPath}`);
-
-        // Spawn Python process for prediction using the processed image path
-        const pythonProcess = spawn('python', [
-            modelScriptPath,
-            processedImagePath
-        ]);
-
-        let result = '';
-        pythonProcess.stdout.on('data', (data) => {
-            result += data.toString();
+        // Send image to YOLO Flask API
+        const form = new FormData();
+        form.append('image', req.file.buffer, {
+            filename: req.body.image, // Processed filename from sharp
+            contentType: req.file.mimetype,
         });
 
-        pythonProcess.stderr.on('data', (data) => {
-            console.error(`Error: ${data}`);
-            return next(new createError('Model Error'));
+        const flaskResponse = await fetch('http://18.207.164.139:8080/detect', {
+            method: 'POST',
+            body: form,
+            headers: form.getHeaders(),
+            timeout: 300000 // 5 minutes
         });
 
-        pythonProcess.on('close', async (code) => {
-            console.log(`Python script ended with code ${code}`);
+        if (!flaskResponse.ok) {
+            const errorData = await flaskResponse.json();
+            throw new createError(`Flask API Error: ${errorData.message}`, flaskResponse.status);
+        }
 
-            // Save user history
-            try {
-                const newPrediction = {
-                    imageUrl: processedImagePath,
-                    rawPrediction: result,
-                    date: new Date()
-                };
+        const detectionResult = await flaskResponse.json();
 
-                console.log("newPrediction =>", newPrediction.rawPrediction);
+        // Save detection in MongoDB
+        const detection = await Detection.create({
+            user: req.user.id,
+            detections: detectionResult.detections,
+            image: req.body.image,
+        });
 
-                let userHistory = await History.findOne({ user: req.user._id });
-                if (userHistory) {
-                    userHistory.predictions.push(newPrediction);
-                    await userHistory.save();
-                } else {
-                    userHistory = await History.create({
-                        user: req.user._id,
-                        predictions: [newPrediction]
-                    });
-                }
-                console.log("User history updated:", userHistory);
-            } catch (historyErr) {
-                console.error("Error updating history:", historyErr);
-                return next(new createError('Error updating history', 501));
-            }
-
-            // Clean up the processed image file after processing.
-            fs.unlink(processedImagePath, (err) => {
-                if (err) {
-                    console.error(`Error deleting processed file: ${err}`);
-                    return next(new createError('Error deleting processed file', 501));
-                }
-            });
-
-            // Parse the model's response to extract the disease name.
-            let diseaseName;
-            try {
-                console.log("The result is:", result);
-                // Assuming the result is a JSON string with a "name" property.
-                const parsedResult = JSON.parse(result.trim());
-                diseaseName = parsedResult.name;
-            } catch (parseErr) {
-                console.error("Error parsing model result:", parseErr);
-                return next(new createError('Error parsing model result', 501));
-            }
-
-            // Query the Disease collection for treatment info using caching.
-            try {
-                let disease;
-                if (diseaseCache[diseaseName]) {
-                    console.log('Using cached disease data');
-                    disease = diseaseCache[diseaseName];
-                } else {
-                    disease = await Disease.findOne({ name: diseaseName });
-                    if (!disease) {
-                        return next(new createError('Disease not found', 404));
-                    }
-                    diseaseCache[diseaseName] = disease;
-                }
-                return res.status(200).json({
-                    success: true,
-                    data: { name: disease.name, symptoms: disease.symptoms, treatment: disease.treatment }
-                });
-            } catch (dbErr) {
-                console.error("Database error:", dbErr);
-                return next(createError('Database error', 501));
-            }
+        res.status(200).json({
+            status: 'success',
+            data: {
+                detection,
+                imageUrl: detection.imageUrl, // make sure you have a virtual or actual field for this
+            },
         });
     } catch (error) {
-        console.error(`Error processing image: ${error}`);
-        return next(createError('Error processing image', 501));
+        next(error);
     }
 };
 

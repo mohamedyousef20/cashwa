@@ -26,7 +26,9 @@ app.set('trust proxy', true);
 app.use(cors());
 app.use(express.json({ limit: "120kb" }));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "uploads")));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.set('trust proxy', 1);
 
 // Rate limiting
 const limiter = rateLimit({
@@ -43,12 +45,11 @@ mountRoutes(app);
 // Error handler 
 app.use(errorHandler);  
 
-const port = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 
-const server = app.listen(port, '0.0.0.0', () => {
-    console.log(`Server running on port ${port}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
 });
-
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {
     console.error("Unhandled Rejection:", {

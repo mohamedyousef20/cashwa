@@ -1,48 +1,30 @@
-# syntax = docker/dockerfile:1
+# ──── STAGE 1: build bcrypt & deps ────────────────────
+FROM node:18-alpine AS builder
 
-# Adjust NODE_VERSION as desired
-ARG NODE_VERSION=22.11.0
-FROM node:${NODE_VERSION}-slim AS base
+RUN apk add --no-cache python3 make g++
 
-LABEL fly_launch_runtime="Node.js"
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN apk del make g++
 
-# Set working directory for the app
+# ──── STAGE 2: final image ────────────────────────────
+FROM node:18-alpine
+
+# Create uploads directory with proper permissions
+RUN mkdir -p /uploads && chown -R node:node /uploads
+
 WORKDIR /app
 
-# Set production environment
-ENV NODE_ENV="production"
+# Copy from builder stage
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app ./
 
-# --- Build Stage ---
-FROM base AS build
+# Switch to non-root user
+USER node
 
-# Install packages needed to build node modules (including Python)
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y \
-    build-essential \
-    node-gyp \
-    pkg-config \
-    python-is-python3
-
-# Copy package files and install dependencies
-COPY package-lock.json package.json ./
-RUN npm ci
-
-# Copy application code
-COPY . .
-
-# --- Final Production Stage ---
-FROM base
-
-# Install Python runtime for production
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y python-is-python3 && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy built application from build stage
-COPY --from=build /app /app
-
-# Expose port 3000 for the application
+ENV PORT=3000
 EXPOSE 3000
 
-# Start the server (can be overwritten at runtime)
-CMD [ "node", "index.js" ]
+CMD ["node", "index.js"]

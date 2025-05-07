@@ -1,11 +1,10 @@
-import express from 'express'
-import { getUserHistory } from '../controllers/historyController.js';
+import express from 'express';
 import { verifyToken } from '../controllers/authController.js';
-
-
+import { getUserHistory } from '../controllers/historyController.js';
 
 const router = express.Router();
-router.use(verifyToken)
-router.get('/' ,getUserHistory);
+
+router.get('/', verifyToken, getUserHistory);
+
 
 export default router;

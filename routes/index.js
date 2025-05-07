@@ -3,6 +3,7 @@ import diseaseRouter from './disease.js';
 import authRouter from './auth.js';
 import historyRouter from './history.js';
 import userRouter from './user.js';
+import historyRoutes from './history.js';
 
 const mountRoute = (app) => {
     app.use('/api/vi/process-image', imageRouter);
@@ -14,3 +15,4 @@ const mountRoute = (app) => {
 };
 
 export default mountRoute;
+

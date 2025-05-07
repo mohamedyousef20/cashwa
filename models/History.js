@@ -1,17 +1,23 @@
 import mongoose from 'mongoose';
 
-const historySchema = new mongoose.Schema({
-    user: {
+const uploadHistorySchema = new mongoose.Schema({
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', 
+        ref: 'User',
         required: true
     },
-    predictions: [{
-        imageUrl: String,
-        rawPrediction: String,
-        date: { type: Date, default: Date.now }
-    }]
+    imagePath: {
+        type: String,
+        required: true
+    },
+    detectionResults: {
+        type: Object,
+        required: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
 });
-const History = mongoose.model('History', historySchema);
 
-export default History;
+export default mongoose.model('UploadHistory', uploadHistorySchema);

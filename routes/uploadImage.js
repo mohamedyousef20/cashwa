@@ -1,13 +1,10 @@
 import express from 'express'
-import uploadImage from '../controllers/upload-imageController.js';
-import multer from 'multer';
+import uploadImage, { createDetectImg, resizeImage } from '../controllers/upload-imageController.js';
 import { verifyToken } from '../controllers/authController.js';
-import uploadSingleImg  from '../middleware/uploadImages.js';
-
 
 
 const router = express.Router();
 router.use(verifyToken)
-router.post('/', uploadSingleImg('image'), uploadImage);
+router.post('/', createDetectImg, resizeImage, uploadImage);
 
 export default router;

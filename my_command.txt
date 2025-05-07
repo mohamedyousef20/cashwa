@@ -1,0 +1,46 @@
+import FormData from 'form-data';
+import fetch from 'node-fetch'; 
+import createError from '../utils/error.js';
+
+const uploadImage = async (req, res, next) => {
+    try {
+        // Check if file exists and is valid
+        if (!req.file) {
+            throw new createError("No image uploaded or invalid file type", 400);
+        }
+
+        // Create FormData object
+        const form = new FormData();
+        form.append('image', req.file.buffer, {
+            filename: req.file.originalname,
+            contentType: req.file.mimetype
+        });
+
+        // Log for debugging
+        console.log('Sending image to Flask:', {
+            filename: req.file.originalname,
+            size: req.file.size,
+            mimetype: req.file.mimetype
+        });
+
+        // Send request to Flask API
+        const flaskResponse = await fetch('http://localhost:5000/detect', {
+            method: 'POST',
+            body: form,
+            headers: form.getHeaders(),
+            timeout: 300000
+        });
+
+        if (!flaskResponse.ok) {
+            const errorText = await flaskResponse.text();
+            throw new Error(`Flask API error: ${flaskResponse.status} - ${errorText}`);
+        }
+
+        const detectionResult = await flaskResponse.json();
+        res.status(200).json(detectionResult);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export default uploadImage;

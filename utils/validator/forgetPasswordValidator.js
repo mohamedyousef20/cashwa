@@ -5,17 +5,17 @@ import User from '../../models/User.js';
 
 const forgetPasswordValidator = [
     check("email")
-    .notEmpty()
-    .withMessage('email is required ').
-    isEmail()
-    .withMessage('invalid email').custom(async(val,{req}) => {
-              
-             await User.findOne({ email: val }).then((user) => {
-                    if (!user) {
-                    return Promise.reject(new createError('No User Belong To This Email',404))
-                    }
-                })
-            }),
-validator
-]
-export default forgetPasswordValidator
+        .notEmpty().withMessage('Email is required.')
+        .isEmail().withMessage('Invalid email format.')
+        .custom(async (val) => {
+            const user = await User.findOne({ email: val });
+            if (!user) {
+                throw new createError('No user found with this email.', 404);
+            }
+            return true;
+        }),
+
+    validator
+];
+
+export default forgetPasswordValidator;

@@ -1,7 +1,6 @@
 // models/user.model.js
 import mongoose from 'mongoose';
-import bcrypt from "bcrypt";
-import fs from 'fs';
+import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -42,7 +41,7 @@ const userSchema = new mongoose.Schema({
 
 userSchema.post("init", function (doc) {
     if (doc.profileImage) {
-        const imageUrl = `${process.env.BASE_URL}/user/${doc.profileImage}`;
+        const imageUrl = `${process.env.BASE_URL}/uploads/${doc.profileImage}`;
         doc.profileImage = imageUrl
     }
 });

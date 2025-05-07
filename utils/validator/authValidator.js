@@ -2,59 +2,62 @@ import { check } from 'express-validator';
 import slugify from 'slugify';
 import User from '../../models/User.js';
 import createError from '../error.js';
-import validator from './validator.js'
+import validator from './validator.js';
 
- export const authValidator = [
-   check('username').notEmpty().withMessage('User name is required.. ')
-     .isLength({ min: 3 }).withMessage('User name At Least Three Letters.. ')
-
-        .custom((val, { req }) => req.body.slug = slugify(val)),
-
-    check("email")
-        .notEmpty()
-        .withMessage('email is required.. ').
-        isEmail()
-        .withMessage('invalid email')
-        .custom(async(val,{req}) => {
-          
-         await User.findOne({ email: val }).then((user) => {
-                if (user) {
-                return Promise.reject(new createError('invalid email its belong to another user',501))
-                }
-            })
-        })
-    
-    ,
-    check('password').notEmpty().withMessage('password is required ')
-        .isLength({ min: 6 }).withMessage("too short password").custom((val, { req }) => {
-           
-            if (val != req.body.passwordConfirm) {
-           throw (new createError('password dose not match',401))
-            }
-            return true;
-        }),
-    check('passwordConfirm').notEmpty().withMessage('password confirm is required'),
-    validator
-];
-
-
-export const loginValidator = [
-  check('email')
-    .isEmail()
-    .withMessage('invalid email')
-    .notEmpty()
-    .withMessage('email is required')
-
-    .custom(async (val, { req }) => {
-      await User.findOne({ email: val }).then((user) => {
-        if (!user) {
-          return Promise.reject(new createError("Wrong email or password", 400));
-        }
-      });
+// ========== REGISTER VALIDATOR ==========
+export const authValidator = [
+  check('username')
+    .notEmpty().withMessage('Username is required.')
+    .isLength({ min: 3 }).withMessage('Username must be at least 3 characters long.')
+    .custom((val, { req }) => {
+      req.body.slug = slugify(val);
+      return true;
     }),
 
-  check("password")
-    .notEmpty(),
-validator
+  check('email')
+    .notEmpty().withMessage('Email is required.')
+    .isEmail().withMessage('Invalid email format.')
+    .custom(async (val) => {
+      const user = await User.findOne({ email: val });
+      if (user) {
+        throw new createError('This email already belongs to another user.', 400);
+      }
+      return true;
+    }),
+
+  check('password')
+    .notEmpty().withMessage('Password is required.')
+    .isLength({ min: 6 }).withMessage('Password must be at least 6 characters long.')
+    .custom((val, { req }) => {
+      if (val !== req.body.passwordConfirm) {
+        throw new createError('Passwords do not match.', 400);
+      }
+      return true;
+    }),
+
+  check('passwordConfirm')
+    .notEmpty().withMessage('Password confirmation is required.'),
+
+  validator
 ];
-export default authValidator
+
+// ========== LOGIN VALIDATOR ==========
+export const loginValidator = [
+  check('email')
+    .notEmpty().withMessage('Email is required.')
+    .isEmail().withMessage('Invalid email format.')
+    .custom(async (val) => {
+      const user = await User.findOne({ email: val });
+      if (!user) {
+        throw new createError('Wrong email or password.', 400);
+      }
+      return true;
+    }),
+
+  check('password')
+    .notEmpty().withMessage('Password is required.'),
+
+  validator
+];
+
+export default authValidator;
